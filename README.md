@@ -1,2 +1,5 @@
-# UFC-Analysis
-Fighting the Odds: A Statistical Analysis of Finishing Methods, Weight Class  Dynamics, and Betting Market Analysis
+# Fighting the Odds: A Statistical Analysis of Finishing Methods, Weight Class  Dynamics, and Betting Market Analysis
+
+This project analyzes UFC fight data to uncover patterns in finishing methods, weight class dynamics, and betting market trends. Using R, it explores how fights typically end—whether by knockout, submission, or decision—and identifies how these outcomes vary across different weight classes. The analysis also considers how the structure of weight divisions affects fight pacing, power dynamics, and the likelihood of different fight conclusions. These insights provide a deeper understanding of the sport beyond surface-level statistics.
+
+In addition to fight outcomes, the project investigates trends in the UFC betting market, looking at how odds reflect fighter performance and public perception. By comparing pre-fight betting odds with actual results, the analysis highlights areas where the market is efficient and where it may be mispricing certain fighters or outcomes. Together, the findings offer a data-driven view into how competition and risk interact in one of the fastest-growing sports in the world.
