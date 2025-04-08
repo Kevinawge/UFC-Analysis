@@ -1,0 +1,944 @@
+---
+title: 'Fighting the Odds: A Statistical Analysis of Finishing Methods, Weight Class Dynamics, and Betting Market Analysis'
+author: "Kevin Hernandez"
+date: "2025-03-10"
+output:
+  html_document:
+    self_contained: false
+runtime: shiny
+---
+
+
+**INTRODUCTION**
+
+The Ultimate Fighting Championship (UFC) has grown into the world's premier mixed martial arts (MMA) organization, attracting global audiences and establishing itself as a dominant force in combat sports. Since its inception, the sport has undergone significant changes in fight strategies, athlete preparation, and betting markets. Understanding these trends requires a data-driven approach to analyze fight outcomes, weight class dynamics, and the accuracy of betting markets in predicting winners. The ability to identify patterns in fight results, finishing methods, and betting odds is crucial for fighters, analysts, and bettors looking to gain a competitive edge in understanding the evolution of MMA.
+
+Mixed martial arts is unique in its diversity of fighting styles, with athletes specializing in disciplines such as Brazilian Jiu-Jitsu, wrestling, kickboxing, and Muay Thai. As a result, fight outcomes can vary significantly based on stylistic matchups, weight divisions, and in-fight decision-making. While knockout artists rely on striking precision and power, submission specialists utilize grappling techniques to force opponents into a tap-out. Meanwhile, well-rounded fighters often opt for tactical approaches that result in decision victories. Understanding how these trends develop over time is essential in assessing fighter performance and strategy evolution in the modern UFC landscape.
+
+This study investigates three critical aspects of UFC fights: the impact of different finishing methods, the role of weight class in fight duration and finish rates, and the accuracy of betting markets. The first part of the analysis explores how fights end, examining the prevalence of knockouts (KOs), submissions, and decisions across different fighter styles and historical periods. The second part delves into weight class dynamics, determining whether heavier fighters finish fights more quickly and how title fights differ from regular bouts. Finally, the third component assesses whether betting odds accurately predict fight outcomes, whether underdogs are underestimated, and how betting confidence correlates with finishing rates.
+
+The betting industry has become an integral part of combat sports, with oddsmakers setting lines based on fighter statistics, performance history, and public perception. However, questions remain regarding the reliability of these betting odds in predicting fight results. Are favorites overvalued, or do underdogs frequently defy expectations? Are there statistical indicators that can help improve betting strategies? By analyzing betting market efficiency alongside fight outcomes, this thesis aims to uncover potential biases in oddsmaking and assess whether historical data can enhance prediction accuracy.
+
+To achieve these objectives, this thesis employs a combination of statistical modeling, machine learning techniques, and interactive visualizations. A comprehensive dataset of UFC fights is used to uncover patterns, test hypotheses, and provide insights into fighter tendencies, betting market efficiency, and evolving trends in fight outcomes. By combining rigorous data analysis with advanced visualization techniques, this research aims to offer valuable insights for analysts, bettors, and fans who seek a deeper understanding of the sport.
+
+The following sections will introduce the dataset, outline the methodology used in the analysis, and present findings related to each of the key research questions. Through this systematic approach, this thesis aims to contribute to the growing field of sports analytics in mixed martial arts, providing a foundation for future research in fight prediction models, betting strategies, and fighter performance evaluation.
+
+
+```{r setup, include=FALSE}
+# Load necessary libraries
+library(shiny)         # For interactive web apps
+library(dplyr)         # For data manipulation
+library(ggplot2)       # For plotting
+library(plotly)        # For interactive plots
+library(lubridate)     # For handling dates
+library(leaflet)       # For interactive maps
+library(tidygeocoder)  # For geocoding locations
+library(tidyr)         # For data tidying
+library(readr)         # For reading CSV files
+library(ggridges)      # For ridge plots
+library(reshape2)      # For data reshaping
+library(corrplot)      # For correlation matrices
+library(refinr)        # For cleaning and deduplicating text data
+```
+
+
+```{r}
+ufc_data <- read.csv("ufc-master.csv", stringsAsFactors = FALSE)
+head(ufc_data)  # View the first few rows
+```
+The dataset utilized in this study, sourced from the Kaggle repository by Mdabbert, provides a comprehensive and structured compilation of Ultimate Fighting Championship (UFC) fight data. Comprising 118 variables, this dataset encapsulates a broad spectrum of fight-specific and fighter-specific characteristics, enabling a multifaceted statistical exploration of mixed martial arts (MMA) competition. The inclusion of structured event metadata, such as fight dates, locations, and weight classes, allows for the analysis of temporal and spatial trends in the sport’s evolution. The geographic distribution of events further supports an examination of regional fight frequency and the UFC's expansion into new markets.
+
+One of the most valuable aspects of this dataset is the extensive set of betting-related variables. These include *RedOdds*, *BlueOdds*, *Expected Value*, and *Betting Edge Index*, which quantify the market's perceived likelihood of a given fighter’s victory. The presence of *KO Odds*, *Submission Odds*, and *Decision Odds* offers further granularity in evaluating whether betting markets effectively incorporate fight-ending probabilities into their pricing models. Such variables facilitate a robust statistical examination of market efficiency, potential biases in oddsmaking, and the prevalence of unexpected upsets in UFC history.
+
+The dataset also captures an exhaustive set of fighter performance metrics that differentiate the competitors in each bout based on their respective corners (*Red Fighter* vs. *Blue Fighter*). Key striking-based variables such as *Significant Strikes Landed*, *Significant Strike Accuracy*, *Total Strikes Attempted*, and *Strikes Absorbed per Minute* allow for an in-depth investigation into stand-up fighting efficiency. Meanwhile, grappling-specific attributes, including *Takedown Accuracy*, *Takedown Defense*, *Submission Attempts*, and *Ground Control Time*, offer insights into ground-fighting proficiency. By distinguishing these fighting styles quantitatively, this dataset enables a rigorous assessment of whether striking-heavy or grappling-heavy fighters exhibit superior finishing probabilities.
+
+A critical strength of the dataset lies in its ability to contextualize fight dynamics through round-by-round and time-based breakdowns. The *Total Fight Time in Seconds*, *Finish Round*, and *Round-by-Round Scoring* variables provide a means to examine fight pacing, early vs. late finishes, and endurance-related factors. The inclusion of *Fight Pace* and *Aggression Score* further refines this analysis by quantifying tempo and offensive output. This level of granularity allows for statistical comparisons across weight classes, identifying potential differences in fight duration and finishing rates between heavier and lighter divisions.
+
+Moreover, the dataset incorporates a range of historical fighter attributes that facilitate longitudinal analyses. Variables such as *Current Win Streak*, *Longest Win Streak*, *Total Bouts*, and *Title Fight Experience* provide a framework for assessing fighter momentum and career trajectory. These historical performance indicators enable predictive modeling approaches that quantify how past records correlate with future outcomes. Additionally, the presence of *Champion Status* and *Title Bout* markers allows for a dedicated analysis of championship fights, examining whether titleholders exhibit more strategic conservatism compared to challengers.
+
+Physical attributes such as *Height*, *Reach*, *Weight*, and *Age* are also included, providing an opportunity to analyze anthropometric advantages in fight outcomes. Given that size and reach differentials have been hypothesized to influence striking efficiency and defensive capabilities, these features enable a thorough investigation into whether physical disparities impact finishing probabilities. Furthermore, by pairing these variables with fighting metrics, one can explore whether taller fighters utilize reach advantages effectively or whether heavier fighters are more prone to early stoppages.
+
+Beyond fighter-specific variables, the dataset also records detailed outcome-based metrics. The *Finish Type* variable categorizes fights into *KO/TKO*, *Submission*, or *Decision*, enabling direct comparisons of finishing tendencies. Combined with *Method of Victory* and *Judge’s Decision Type*, this dataset supports a rigorous assessment of how different styles of victories are distributed across fight histories. Additionally, the ability to analyze decision types (e.g., unanimous vs. split decision) allows for an evaluation of competitive balance and judging trends over time.
+
+Overall, the depth and breadth of this dataset make it an exceptional resource for applied statistical analysis in sports analytics. With structured categorical variables, continuous performance indicators, and historical context, it provides a strong foundation for predictive modeling, classification algorithms, and trend analysis in the UFC. The integration of betting market data, fighter-specific attributes, and fight-level outcomes allows for a multifactorial exploration of fight dynamics, betting inefficiencies, and the evolving landscape of mixed martial arts competition.
+
+```{r}
+
+
+# Group by year and count the number of fights per year
+ufc_yearly <- ufc_data %>%
+  mutate(Year = as.integer(format(as.Date(Date, format="%Y-%m-%d"), "%Y"))) %>%
+  group_by(Year) %>%
+  summarise(Fight_Count = n()) %>%
+  arrange(Year)
+
+# Create a cleaner line graph
+ufc_growth_plot <- ggplot(ufc_yearly, aes(x = Year, y = Fight_Count)) +
+  geom_line(color = "darkblue", size = 1.5) +  # Smoother line
+  geom_point(color = "red", size = 3) +  # Red dots for each year
+  scale_x_continuous(breaks = seq(min(ufc_yearly$Year), max(ufc_yearly$Year), by = 1)) +  # Full year numbers
+  labs(
+    title = "UFC Growth: Number of Fights Per Year",
+    x = "Year",
+    y = "Number of Fights"
+  ) +
+  theme_minimal(base_size = 15)  # Better theme for readability
+
+# Convert ggplot to an interactive plot using plotly
+interactive_plot <- ggplotly(ufc_growth_plot)
+
+# Display the interactive plot
+interactive_plot
+
+
+```
+The Ultimate Fighting Championship (UFC) has experienced a remarkable transformation from a niche combat sport to a globally recognized sporting entity, reflected in the increasing number of fights held annually. The expansion of the UFC is not only indicative of its growing fan base but also serves as an empirical measure of the organization’s operational scale and financial success. The number of fights per year has fluctuated over time, driven by multiple factors including market demand, regulatory developments, and external disruptions such as the COVID-19 pandemic. By analyzing longitudinal data on UFC events, we can quantitatively assess the organization’s trajectory and identify underlying patterns that have influenced its growth. The steady rise in fight frequency, coupled with periodic downturns, suggests that external factors, rather than organizational stagnation, have dictated fluctuations in event scheduling.
+
+The upward trend in annual fight volume is particularly pronounced from 2013 to 2019, coinciding with the UFC’s increasing international expansion and growing investments in talent acquisition and event production. The dataset clearly illustrates that the number of fights per year reached its peak in 2019, before experiencing a sharp decline in 2020, aligning with the onset of the COVID-19 pandemic, which led to logistical challenges, travel restrictions, and temporary venue closures. However, the UFC's ability to swiftly adapt by creating “Fight Island” and implementing stringent health protocols enabled a relatively quick rebound in fight frequency in subsequent years. The dataset’s temporal resolution allows us to quantify these shifts and evaluate how resilient the organization has been in maintaining fight volume under adverse conditions.
+
+Beyond its total event count, the distribution of fights across different years provides an opportunity to investigate the relationship between market expansion, fighter recruitment, and promotional strategies. The increasing number of fights from 2021 onward suggests a post-pandemic recovery phase, in which the UFC sought to compensate for prior disruptions while capitalizing on renewed global interest in MMA. Statistical modeling of fight frequency over time can reveal whether the UFC's growth follows a linear or exponential pattern and whether external shocks have had transient or lasting effects on scheduling trends. By leveraging predictive analytics, we can further estimate the UFC’s expected growth trajectory and assess the sustainability of its expansion in an increasingly competitive sports market.
+```{r}
+# Load dataset
+ufc_data <- read.csv("ufc-master.csv")  # Adjust path if needed
+
+# Ensure date is correctly formatted
+ufc_data$Date <- as.Date(ufc_data$Date, format="%Y-%m-%d")
+
+# Extract Year from Date
+ufc_data$Year <- format(ufc_data$Date, "%Y")
+
+# Count number of events per location per year
+ufc_locations <- ufc_data %>%
+  group_by(Location, Year) %>%
+  summarise(Event_Count = n(), .groups = "drop") %>%
+  filter(!is.na(Location))
+
+# Geocode unique locations (only once)
+geocoded_locations <- ufc_locations %>%
+  distinct(Location) %>%
+  geocode(Location, method = "osm") %>%
+  na.omit()
+
+# Merge geocoded data back with the dataset
+ufc_locations <- left_join(ufc_locations, geocoded_locations, by = "Location")
+
+# Create Shiny App
+ui <- fluidPage(
+  titlePanel("Interactive UFC Event Map by Year & Frequency"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("year", "Select Year:", 
+                  min = min(as.numeric(ufc_locations$Year), na.rm=TRUE), 
+                  max = max(as.numeric(ufc_locations$Year), na.rm=TRUE), 
+                  value = c(min(as.numeric(ufc_locations$Year), na.rm=TRUE), 
+                            max(as.numeric(ufc_locations$Year), na.rm=TRUE)), 
+                  step = 1, sep = "", animate = TRUE)
+    ),
+    
+    mainPanel(
+      leafletOutput("map", height = 600)
+    )
+  )
+)
+
+server <- function(input, output) {
+  filtered_data <- reactive({
+    ufc_locations %>%
+      filter(as.numeric(Year) >= input$year[1] & as.numeric(Year) <= input$year[2])
+  })
+  
+  output$map <- renderLeaflet({
+    leaflet(filtered_data()) %>%
+      addTiles() %>%
+      addCircleMarkers(
+        ~long, ~lat,
+        radius = ~log(Event_Count + 1) * 4,  # Scale marker size based on event count
+        color = "red",
+        label = ~paste(Location, "(", Year, "):", Event_Count, "Events"),
+        popup = ~paste("<b>Location:</b> ", Location, "<br><b>Year:</b> ", Year, 
+                       "<br><b>Number of Events:</b> ", Event_Count)
+      ) %>%
+      addLegend(
+        position = "bottomright",
+        title = "Event Frequency",
+        colors = "red",
+        labels = "More Events = Larger Circle"
+      )
+  })
+}
+
+shinyApp(ui, server)
+```
+The interactive visualization of UFC event locations over different years provides a compelling view of the global expansion of the organization and the increasing frequency of events in key locations. The data-driven approach, leveraging spatial visualization techniques, allows us to quantify the concentration of fights in specific regions and analyze how event distribution has evolved. The temporal filter incorporated in the interactive map enables us to assess UFC’s growth in various geographic regions over time, illustrating the organization's strategic expansion into new markets. The varying circle sizes indicate event frequency, making it clear that North America, particularly the United States, has remained the dominant location for UFC fights.
+
+A crucial observation from this spatial analysis is the consistent clustering of events in major metropolitan hubs, suggesting a correlation between fight frequency and economic, demographic, and logistical factors. Cities with high population densities, established sporting venues, and strong MMA fan bases tend to host multiple events per year. In contrast, the limited number of events in certain regions, despite significant market potential, may indicate regulatory challenges, logistical constraints, or lower audience engagement. Additionally, the rise of international events in Europe, South America, and Asia aligns with UFC’s broader market penetration strategy, targeting emerging fan bases and enhancing the sport’s global appeal.
+
+From a statistical perspective, analyzing the frequency of events over different years provides insights into the organizational strategies of UFC. The increase in the number of fights per year corresponds to periods of rapid expansion, while occasional declines may be attributed to external factors such as economic downturns, global crises, or regulatory restrictions. For instance, variations in event distribution between 2010 and 2024 reflect changes in UFC’s operational framework, including media rights deals, regional partnerships, and venue availability. By modeling the spatiotemporal trends of UFC events, we can identify cyclical patterns and potential future directions for event allocation.
+
+The variation in event concentration also provides a deeper understanding of audience engagement and market saturation. Markets that host repeated events across multiple years often demonstrate strong ticket sales, viewership metrics, and local promotional partnerships, which contribute to UFC’s decision-making in scheduling future fights. On the other hand, regions with sporadic event occurrences may indicate experimental market entries where UFC is testing long-term viability. A comparative analysis of event frequency across different locations reveals that UFC follows a strategic approach in balancing revenue generation from established markets while cultivating new ones for sustained growth.
+
+Furthermore, the impact of key external disruptions, such as global events or policy changes, becomes evident in the time-series visualization of event distributions. Notable fluctuations in event counts during specific years highlight periods where external conditions influenced UFC’s ability to host fights. The sharp recovery following downturns further supports the adaptability of the organization, as seen in the resumption and redistribution of events globally. By leveraging interactive visualization techniques, this analysis effectively captures the evolution of UFC’s global footprint, offering a data-driven perspective on how the sport has expanded in response to market demand, logistical feasibility, and external influences.
+
+
+```{r}
+
+# Define columns related to rankings
+ranking_columns <- c("RWFlyweightRank", "RWFeatherweightRank", "RWStrawweightRank",
+                     "RWBantamweightRank", "RHeavyweightRank", "RLightHeavyweightRank",
+                     "RMiddleweightRank", "RWelterweightRank", "RLightweightRank",
+                     "RFeatherweightRank", "RBantamweightRank", "RFlyweightRank",
+                     "RPFPRank", "BWFlyweightRank", "BWFeatherweightRank", "BWStrawweightRank",
+                     "BWBantamweightRank", "BHeavyweightRank", "BLightHeavyweightRank",
+                     "BMiddleweightRank", "BWelterweightRank", "BLightweightRank",
+                     "BFeatherweightRank", "BBantamweightRank", "BFlyweightRank",
+                     "BPFPRank")
+
+# Filter rows where at least one of the ranking columns is NOT NA
+ranked_fighters_df <- ufc_data %>%
+  filter(if_any(all_of(ranking_columns), ~ !is.na(.)) | TitleBout == TRUE)
+
+# View the filtered dataset
+print(head(ranked_fighters_df))
+
+# Save the filtered dataset if needed
+write_csv(ranked_fighters_df, "ranked_ufc_fighters.csv")
+```
+I applied a filtering mechanism to extract ranked fighters from the UFC dataset, ensuring that only fights involving ranked competitors or title bouts were included in the resulting dataframe. The methodology began by defining a vector of ranking-related columns, encompassing both red and blue corner rankings across multiple weight classes. These rankings include divisions from flyweight to heavyweight, as well as pound-for-pound rankings. By utilizing the `if_any()` function within the `dplyr` package, I was able to efficiently check whether any of the specified ranking columns contained non-missing values. Additionally, I explicitly retained title fights (`TitleBout == TRUE`) in the dataset, ensuring that championship fights remained a part of the analysis regardless of ranking status. This approach allows for a more focused examination of the elite tier of UFC competition.
+
+I chose to analyze only ranked fighters because rankings serve as an essential indicator of skill level, competitive standing, and career trajectory within the UFC. By focusing on ranked fighters, I ensure that the dataset represents high-level competition, making statistical insights more meaningful and relevant. Unranked fighters often vary significantly in skill level, making comparisons less reliable. Moreover, betting markets, fight outcomes, and statistical trends are more stable and analytically valuable when confined to ranked competitors. The results, as shown in the refined dataset, indicate that the filtering method successfully isolates bouts involving ranked athletes, allowing for a more rigorous examination of performance trends, fight dynamics, and predictive modeling within the UFC’s elite competition.
+
+```{r}
+
+
+# Read in the UFC dataset
+ufc_data <- read_csv("ranked_ufc_fighters.csv")
+
+# ------------- Offensive Variables (3) -------------
+# 1. **Aggression Score** (Higher values = stronger favorite)
+ufc_data <- ufc_data %>%
+  mutate(AggressionScore = 1 / (1 + exp(-(RedOdds - BlueOdds) / 100)))
+
+# 2. **Finishing Probability Score** (Higher values = more likely to finish the fight)
+# Convert American odds to Decimal odds
+# Convert American odds to Decimal odds
+convert_odds <- function(odds) {
+  ifelse(odds > 0, 1 + (odds / 100), 1 + (100 / abs(odds)))
+}
+
+# Apply conversion to KO and Submission odds
+ufc_data <- ufc_data %>%
+  mutate(RKOOddsDec = convert_odds(RKOOdds),
+         RSubOddsDec = convert_odds(RSubOdds),
+         BKOOddsDec = convert_odds(BKOOdds),
+         BSubOddsDec = convert_odds(BSubOdds)) %>%
+
+  # Calculate Finishing Probability Correctly
+  mutate(RedFinishingProb = (1 / RKOOddsDec) + (1 / RSubOddsDec),
+         BlueFinishingProb = (1 / BKOOddsDec) + (1 / BSubOddsDec)) %>%
+
+  # 🔧 Fix: Cap values at 1.0 so they stay within probability range
+  mutate(RedFinishingProb = pmin(RedFinishingProb, 1),
+         BlueFinishingProb = pmin(BlueFinishingProb, 1))
+
+
+# 3. **Striking vs. Grappling Efficiency**
+# Calculate Striking vs. Grappling Efficiency
+ufc_data <- ufc_data %>%
+  mutate(RedStrikeGrapple = RKOOdds / (RKOOdds + RSubOdds),
+         BlueStrikeGrapple = BKOOdds / (BKOOdds + BSubOdds)) %>%
+
+  # 🔧 Fix: Ensure values are between 0 and 1 (no negatives or extreme values)
+  mutate(RedStrikeGrapple = pmin(pmax(RedStrikeGrapple, 0), 1),
+         BlueStrikeGrapple = pmin(pmax(BlueStrikeGrapple, 0), 1))
+
+
+# 4. **Fight Pace Score**
+ufc_data <- ufc_data %>%
+  mutate(FightPace = (1 / (FinishRound + 1)) * (1 - TotalFightTimeSecs / 1500))
+
+# 5. **Survivability Index (Ability to Last Past Round 2)**
+ufc_data <- ufc_data %>%
+  mutate(SurvivabilityIndex = TotalFightTimeSecs / (FinishRound * 300))
+
+
+# ------------- Betting Market Confidence (1) -------------
+# 7. **Betting Edge Index** (Higher = greater confidence in favorite)
+# Function to convert American odds to Decimal odds
+convert_odds <- function(odds) {
+  ifelse(odds > 0, 1 + (odds / 100), 1 + (100 / abs(odds)))
+}
+
+# Convert odds to decimal format
+ufc_data <- ufc_data %>%
+  mutate(RedOddsDec = convert_odds(RedOdds),
+         BlueOddsDec = convert_odds(BlueOdds)) %>%
+
+  # Calculate implied probability from decimal odds
+  mutate(Pred = 1 / RedOddsDec,
+         Pblue = 1 / BlueOddsDec) %>%
+
+  # Calculate Betting Edge using probability differences
+  mutate(BettingEdgeIndex = abs(Pred - Pblue)) %>%
+
+  # 🔧 Fix: Replace NA values with 0 (if missing odds exist)
+  mutate(BettingEdgeIndex = ifelse(is.na(BettingEdgeIndex), 0, BettingEdgeIndex))
+
+# Save the new dataset
+write_csv(ufc_data, "full_ufc_data.csv")
+```
+
+```{r}
+# ------------- Create a New Dataset with Only the Engineered Variables -------------
+ufc_engineered_variables <- ufc_data %>%
+  select(RedFighter, BlueFighter, AggressionScore, 
+         RedFinishingProb, BlueFinishingProb, 
+         RedStrikeGrapple, BlueStrikeGrapple, 
+         FightPace, SurvivabilityIndex,
+         BettingEdgeIndex)
+
+# View the new dataset
+head(ufc_engineered_variables)
+
+# Save the new dataset
+write_csv(ufc_engineered_variables, "ufc_engineered_variables.csv")
+
+```
+In order to conduct a robust statistical analysis of UFC fight outcomes, I developed several engineered variables that encapsulate key aspects of fighter performance, betting market confidence, and fight dynamics. Raw data such as odds, fight duration, and round progression, while informative, often require transformation to capture underlying patterns and relationships more effectively. By constructing derived metrics, I am able to enhance predictive modeling, reduce noise in the data, and introduce interpretable features that reflect critical fight characteristics. These engineered variables help quantify aspects such as fighter dominance, finishing tendencies, stylistic preferences, and market sentiment, enabling a more structured and data-driven approach to analyzing UFC bouts.
+
+One of the key engineered variables in this analysis is the **Aggression Score**, which serves as a proxy for how strongly a fighter is favored based on betting odds. This score is calculated using the logistic function:  
+_Aggression Score = 1 / (1 + exp(-(RedOdds - BlueOdds) / 100))_.  
+This transformation ensures that differences in betting odds are smoothly mapped onto a probability-like scale, where larger values indicate a stronger betting favorite. The logistic function effectively compresses extreme values, preventing disproportionate influence from outliers in the odds data. As a result, the Aggression Score provides a standardized metric to quantify how dominant a fighter is perceived to be before a fight.
+
+Another crucial variable is the **Finishing Probability Score**, which estimates the likelihood of a fight ending via knockout (KO) or submission rather than a judges' decision. This score is derived from the conversion of American odds into decimal odds using the function:  
+_ConvertOdds(odds) = if odds > 0, then 1 + (odds / 100), otherwise 1 + (100 / |odds|)_.  
+Using these decimal odds, the finishing probability is computed as:  
+_RedFinishingProb = (1 / RKOOddsDec) + (1 / RSubOddsDec)_,  
+_BlueFinishingProb = (1 / BKOOddsDec) + (1 / BSubOddsDec)_.  
+Since probabilities cannot exceed 1, a correction is applied:  
+_RedFinishingProb = min(RedFinishingProb, 1)_,  
+_BlueFinishingProb = min(BlueFinishingProb, 1)_.  
+This ensures that the probabilities remain within a valid range while capturing the cumulative likelihood of a fighter securing a finish.
+
+The **Striking vs. Grappling Efficiency** metric quantifies whether a fighter is more likely to win via striking or grappling techniques. This is computed using the ratio:  
+_RedStrikeGrapple = RKOOdds / (RKOOdds + RSubOdds)_,  
+_BlueStrikeGrapple = BKOOdds / (BKOOdds + BSubOdds)_.  
+A fighter with a score closer to 1 relies predominantly on striking to win, while a lower value suggests a greater reliance on grappling and submission techniques. To ensure valid values, the metric is constrained to the range [0,1] using:  
+_RedStrikeGrapple = min(max(RedStrikeGrapple, 0), 1)_,  
+_BlueStrikeGrapple = min(max(BlueStrikeGrapple, 0), 1)_.  
+This feature provides valuable insight into a fighter’s style and potential weaknesses.
+
+The **Fight Pace Score** captures the tempo at which a fighter competes, integrating round progression and total fight duration into a single metric:  
+_FightPace = (1 / (FinishRound + 1)) * (1 - TotalFightTimeSecs / 1500)_.  
+This equation ensures that fights ending in earlier rounds receive higher pace scores, while longer fights see a lower pace score. The denominator in the time component normalizes values against an estimated upper-bound for UFC fight durations, allowing for meaningful cross-fighter comparisons.
+
+The **Survivability Index** assesses a fighter’s ability to endure extended exchanges and survive past early rounds. It is calculated as:  
+_Survivability Index = TotalFightTimeSecs / (FinishRound * 300)_.  
+Since 300 seconds represents the length of a standard round, this formulation effectively scales fight duration relative to round progression. Higher values indicate greater durability, as fighters who persist through multiple rounds without being finished will have a higher index.
+
+To quantify disparities in betting market confidence, the **Betting Edge Index** is introduced. This measure calculates the absolute difference between the implied probabilities of each fighter based on odds:  
+_BettingEdgeIndex = |(1 / RedOddsDec) - (1 / BlueOddsDec)|_.  
+This index highlights fights where bookmakers exhibit a strong confidence differential between fighters, making it a useful indicator for identifying potentially mispriced betting lines. Additionally, replacing missing values with zero ensures that fights lacking odds data do not introduce computational issues.
+
+Together, these engineered variables provide a structured and interpretable framework for analyzing UFC fights. By leveraging transformations rooted in probability theory and market analysis, these features enable deeper insights into fighter performance, betting market efficiency, and fight dynamics. The integration of these variables enhances predictive modeling efforts, allowing for a more robust understanding of the factors influencing fight outcomes.
+
+```{r}
+# Compute Enhanced Summary Statistics for Engineered Variables
+summary_engineered <- ufc_data %>%
+  select(AggressionScore, RedFinishingProb, BlueFinishingProb, 
+         RedStrikeGrapple, BlueStrikeGrapple, 
+         FightPace, SurvivabilityIndex, 
+         BettingEdgeIndex) %>%
+  summarise(
+    across(everything(), list(
+      Count = ~sum(!is.na(.)),
+      Mean = ~round(mean(., na.rm = TRUE), 5),
+      `Std Dev` = ~round(sd(., na.rm = TRUE), 5),
+      `Q1 (25%)` = ~round(quantile(., 0.25, na.rm = TRUE), 5),
+      `Median (50%)` = ~round(median(., na.rm = TRUE), 5),
+      `Q3 (75%)` = ~round(quantile(., 0.75, na.rm = TRUE), 5)
+    ), .names = "{.col}_{.fn}")
+  ) %>%
+  pivot_longer(cols = everything(), names_to = c("Variable", "Statistic"), names_sep = "_", values_to = "Value") %>%
+  pivot_wider(names_from = "Statistic", values_from = "Value")
+
+# Print Summary Statistics in a Clean Format
+print(summary_engineered)
+
+```
+The statistical summary of the engineered variables provides valuable insights into the distribution and variability of key fight-related metrics. The **Aggression Score**, with a mean of 0.353 and a standard deviation of 0.434, exhibits considerable variability, suggesting a wide disparity in how strongly fighters are favored by betting markets. The median value of 0.052 indicates that the majority of fighters are not overwhelmingly favored, while the high third quartile (Q3 = 0.934) reflects a subset of matchups where one fighter is heavily expected to dominate. This aligns with the reality of UFC matchmaking, where some bouts feature clear favorites while others are more balanced contests. The **Betting Edge Index**, with a mean of 0.319 and a standard deviation of 0.208, further supports this notion, indicating that while most fights have moderate betting market confidence differentials, there are cases where oddsmakers show significant discrepancies in perceived fighter strength.
+
+The **Finishing Probability Scores** for both red and blue fighters highlight important trends regarding fight outcomes. The mean finishing probabilities for red (0.379) and blue (0.299) suggest that, on average, there is roughly a 30-40% chance that a fighter will finish the bout via knockout or submission rather than relying on a decision victory. The relatively low standard deviations (0.170 for red, 0.143 for blue) suggest that while there is some variability, finishing probabilities are more stable compared to aggression scores. Additionally, the **Striking vs. Grappling Efficiency** scores indicate that striking is a more common path to victory, with mean values of 0.377 (red) and 0.360 (blue). The higher third quartiles (Q3 ≈ 0.50) suggest that a significant proportion of fighters rely more on striking than grappling to secure wins, aligning with trends in modern MMA where striking prowess is often prioritized over pure grappling ability.
+
+The **Fight Pace Score** and **Survivability Index** provide additional layers of interpretability regarding fighter endurance and tempo. The relatively low mean **Fight Pace Score** of 0.184, with a first quartile (Q1) of 0.10 and a third quartile (Q3) of 0.249, indicates that most fights progress at a measured pace rather than a frenetic one. This is consistent with tactical approaches in high-level MMA, where fighters balance aggression with conservation of energy. The **Survivability Index**, with a median of 1.00 and a high Q3 value of 1.00, suggests that a large proportion of fights last at least into later rounds, reinforcing the idea that many UFC bouts are not concluded in the opening frame. This statistical profile confirms that while finishes are frequent, many fighters exhibit resilience, allowing fights to extend into later rounds or even reach the judges' scorecards. These insights collectively enhance our understanding of UFC fight dynamics, offering a structured way to quantify fighter tendencies and market expectations.
+```{r}
+suppressWarnings(library(corrplot))
+suppressMessages(library(corrplot))
+
+# 🔹 Compute Correlation Matrix
+cor_matrix <- ufc_data %>%
+  select(AggressionScore, RedFinishingProb, BlueFinishingProb, 
+         RedStrikeGrapple, BlueStrikeGrapple, 
+         FightPace, SurvivabilityIndex, 
+         BettingEdgeIndex) %>%
+  cor(use = "complete.obs")
+
+# 🔹 Create a Heatmap of Correlations
+corrplot(cor_matrix, method = "color", type = "upper",
+         tl.col = "black", tl.srt = 45, col = colorRampPalette(c("blue", "white", "red"))(200))
+
+# Alternative: ggplot Heatmap if corrplot doesn't work
+cor_data <- melt(cor_matrix)
+ggplot(data = cor_data, aes(x=Var1, y=Var2, fill=value)) +
+  geom_tile() +
+  scale_fill_gradient2(low="blue", high="red", mid="white", 
+                       midpoint=0, limit=c(-1,1), space="Lab") +
+  theme_minimal() +
+  labs(title="Heatmap of Engineered Variable Correlations",
+       x="", y="") +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+
+```
+The correlation heatmaps provide a robust statistical representation of the relationships among the engineered variables, offering valuable insights into their interdependencies. The intensity and direction of the correlations are visually depicted through the color gradient, where red signifies positive correlation and blue indicates negative correlation. Notably, a strong positive correlation is observed between **Aggression Score** and **Red Finishing Probability**, which aligns with the expectation that more aggressive fighters—proxied by betting odds—tend to have a higher likelihood of finishing their opponents. This relationship confirms the validity of the Aggression Score metric as a predictive feature in modeling fight outcomes. Additionally, a high correlation between **Red and Blue Finishing Probabilities** and their respective **Strike-Grapple Efficiency Scores** suggests that a fighter’s finishing capability is inherently tied to their offensive approach.
+
+Another key finding from the heatmap analysis is the observed correlation between **Survivability Index** and **Fight Pace**, though to a lesser degree than other variables. The positive association suggests that fighters who maintain a slower fight pace are more likely to extend the bout into later rounds. This result supports existing combat sports theory, where high-tempo fighters typically engage in more frequent exchanges, increasing the probability of an early finish. However, an inverse relationship between **Survivability Index** and **Aggression Score** underscores the trade-off between conservatism and aggression—fighters with higher aggression scores tend to have lower survivability, reflecting a style that prioritizes early finishes over endurance.
+
+The **Betting Edge Index**, which encapsulates market confidence in a fight’s predicted outcome, exhibits notable correlations with finishing probabilities and aggression metrics. This finding highlights how betting markets assimilate fighter attributes into probabilistic estimations, which, in turn, manifest as measurable patterns within the dataset. The weaker correlation between **Betting Edge Index** and **Fight Pace** suggests that while bettors account for offensive capability and finishing likelihood, fight tempo may be a less dominant factor in their valuation models. Such insights have implications for predictive modeling in combat sports analytics, where market-driven odds can be integrated with fighter-level metrics to enhance forecasting accuracy.
+
+Overall, the correlation heatmap affirms the statistical integrity of the engineered variables and their potential applicability in predictive modeling. The presence of strong and intuitive correlations provides empirical support for the methodological choices made in feature engineering, particularly regarding finishing probabilities, striking-to-grappling efficiency, and survivability. The relatively weaker correlations between some variables, such as **Fight Pace** and **Betting Edge Index**, indicate areas where additional feature refinement or interaction terms may improve model performance. This analysis underscores the importance of leveraging data-driven insights to construct robust predictive frameworks for fight outcomes, reinforcing the role of statistical modeling in combat sports analytics.
+
+
+**How Do Different Finishing Methods Impact UFC Fight Outcomes?**
+Understanding the impact of different finishing methods on UFC fight outcomes is crucial for dissecting the tactical and strategic evolution of the sport. The way a fight concludes—whether by knockout, submission, or decision—offers insights into fighter tendencies, training paradigms, and even external influences such as judging criteria and rule changes. By analyzing historical trends in finishing methods, we can assess how different fighting styles correlate with long-term success, as well as identify patterns that may predict future shifts in UFC competition. A data-driven exploration of fight outcomes allows us to quantify the effectiveness of specific finishing strategies and evaluate their implications for fighter longevity and championship aspirations.
+
+One of the most significant aspects of this analysis lies in the balance between striking and grappling. Knockout and submission finishes represent the two primary methods of securing a definitive victory, yet they require vastly different skill sets and approaches. Striking-based fighters often rely on power, precision, and distance control, whereas submission specialists prioritize positional dominance and technical execution on the ground. The historical trends in win methods provide insights into whether the sport is shifting toward striking-heavy tactics or maintaining a balanced distribution of finishing styles. Additionally, understanding the prevalence of decision outcomes allows us to evaluate whether modern fighters are becoming more risk-averse, strategically pacing their fights rather than aggressively seeking finishes.
+
+From a predictive modeling perspective, the classification of fight outcomes based on finishing methods can inform match outcome probabilities, fighter performance projections, and betting market efficiency. By integrating statistical modeling techniques, we can explore whether certain finishing methods correlate with championship success, longevity in the sport, or even susceptibility to specific fighting styles. This section of the thesis aims to bridge the gap between empirical fight data and theoretical combat strategies, providing a robust framework for understanding how finishing methods shape UFC fight dynamics in both historical and predictive contexts.
+
+```{r}
+
+
+# Load the full UFC dataset
+ufc_data <- read_csv("full_ufc_data.csv")
+
+# Ensure the 'Year' column is correctly extracted from Date
+ufc_data <- ufc_data %>%
+  mutate(Date = as.Date(Date, format="%Y-%m-%d"),
+         Year = year(Date))
+
+# ✅ Reclassify Finish types into three main categories
+ufc_data <- ufc_data %>%
+  mutate(FinishGroup = case_when(
+    Finish == "KO/TKO" ~ "KO/TKO",
+    Finish == "SUB" ~ "Submission",
+    Finish %in% c("U-DEC", "S-DEC", "M-DEC") ~ "Decision",  # Combine all decisions
+    TRUE ~ NA_character_  # Exclude other values like "DQ"
+  )) %>%
+  filter(!is.na(FinishGroup))  # Remove excluded categories
+
+# ✅ Aggregate win method percentages per year
+win_method_trends <- ufc_data %>%
+  group_by(Year, FinishGroup) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Year) %>%
+  mutate(Percentage = (Count / sum(Count)) * 100)
+
+# ✅ Generate a color palette dynamically
+colors <- c("KO/TKO" = "#E63946",   # Bold Red
+            "Submission" = "#457B9D", # Deep Blue
+            "Decision" = "#2A9D8F")   # Teal Green
+
+
+# ✅ Fix Year Formatting: Convert to Integer
+win_method_trends$Year <- as.integer(win_method_trends$Year)
+
+# ✅ Create an interactive stacked bar chart using ggplot & plotly
+win_method_plot <- ggplot(win_method_trends, aes(x = Year, y = Percentage, fill = FinishGroup)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = colors) +
+  scale_x_continuous(breaks = seq(min(win_method_trends$Year), max(win_method_trends$Year), by = 1)) +  # Fix Year Display
+  labs(title = "KO, Submission, and Decision Trends Over Time",
+       x = "Year",
+       y = "Percentage of Fights",
+       fill = "Win Method") +
+  theme_minimal()
+
+# ✅ Convert ggplot to an interactive plotly chart
+interactive_plot <- ggplotly(win_method_plot)
+
+# ✅ Display the interactive plot
+interactive_plot
+
+
+```
+The stacked bar chart provides a longitudinal analysis of the distribution of fight outcomes in the UFC from 2013 to 2024, categorizing victories by knockout (KO/TKO), submission, and decision. A clear trend emerges where decision victories have remained the dominant outcome type, reinforcing the notion that as the sport has evolved, fighters have become more strategic, and matches are increasingly determined by judges' scorecards rather than finishes. This shift may be attributed to improved defensive capabilities, enhanced game planning, and evolving rule enforcement that favors technical precision over reckless aggression. The overall consistency in decision rates across years suggests that UFC bouts are becoming more competitive, with fewer one-sided fights leading to early stoppages.
+
+Knockout rates exhibit variability over the years but maintain a relatively stable proportion, oscillating between 40% and 50% of non-decision outcomes. The fluctuations in KO/TKO occurrences could be influenced by various factors, including changes in fighter striking efficiency, weight class distributions, and even broader shifts in MMA training methodologies. The relatively steady presence of KO/TKOs indicates that striking ability remains a critical determinant of fight outcomes, yet it does not appear to be increasing significantly over time. This observation challenges the assumption that modern fighters rely more on striking dominance, instead highlighting that a balanced approach incorporating defensive strategies has become essential.
+
+Submission victories, represented as the smallest proportion of outcomes, reflect a potential decline in grappling-based finishes over time. While submission specialists remain prevalent in the UFC, the data suggests that improvements in submission defense and rule modifications—such as stricter stand-up policies—may have reduced the frequency of submission victories. This trend aligns with the broader narrative in MMA, where elite fighters must demonstrate well-rounded skill sets rather than relying solely on grappling dominance. The relatively low and stable submission rates emphasize that while grappling remains a crucial component of MMA, it is often insufficient as a sole strategy to secure victories at the highest levels of competition.
+```{r}
+# Load dataset
+ufc_data <- read.csv("full_ufc_data.csv")
+
+# Select necessary columns with engineered variables
+ufc_filtered <- ufc_data %>%
+  select(Finish, AggressionScore, FightPace, SurvivabilityIndex, BettingEdgeIndex)
+
+# Convert Finish to Factor
+ufc_filtered$Finish <- as.factor(ufc_filtered$Finish)
+
+```
+
+```{r}
+# Ensure Finish column is clean
+ufc_data <- ufc_data %>%
+  filter(Finish %in% c("KO/TKO", "SUB", "U-DEC", "S-DEC", "M-DEC")) 
+
+# Select relevant columns for analysis
+ufc_filtered <- ufc_data %>%
+  select(Finish, AggressionScore, FightPace, SurvivabilityIndex, RedStrikeGrapple, BlueStrikeGrapple, TotalFightTimeSecs)
+
+# Convert Finish to Factor for better visualization
+ufc_filtered$Finish <- as.factor(ufc_filtered$Finish)
+```
+
+```{r}
+# Bar Plot: Average Aggression Score per Finishing Method
+bar_plot <- ufc_filtered %>%
+  group_by(Finish) %>%
+  summarise(Avg_Aggression = mean(AggressionScore, na.rm = TRUE)) %>%
+  ggplot(aes(x = Finish, y = Avg_Aggression, fill = Finish)) +
+  geom_col() +
+  labs(title = "Average Aggression Score by Finishing Method",
+       x = "Finishing Method",
+       y = "Average Aggression Score") +
+  theme_minimal()
+
+# Convert to interactive plot
+interactive_bar_plot <- ggplotly(bar_plot)
+
+# Display interactive plot
+interactive_bar_plot
+```
+The bar chart presents the **Average Aggression Score** across different finishing methods in UFC fights, providing an insightful metric for evaluating how a fighter's perceived level of aggression correlates with various fight outcomes. Notably, **majority decision (M-DEC) victories exhibit the highest average aggression scores**, suggesting that fights resulting in clear yet prolonged dominance often involve fighters who continuously pressure their opponents, maintain a high output, and control octagon dynamics for extended periods. This aligns with the strategic nature of high-level MMA, where overwhelming an opponent without necessarily securing a finish can still lead to definitive scoring advantages on judges' scorecards. The substantial gap between M-DEC and the other finishing methods further reinforces the idea that consistent forward pressure and sustained offensive engagement are highly rewarded under modern judging criteria.
+
+Knockouts (KO/TKO) exhibit moderate aggression scores, which is somewhat counterintuitive considering that knockouts are typically associated with explosive offensive bursts. This outcome suggests that knockouts do not always stem from **relentless aggression but rather from precise, well-timed striking exchanges**. Many KO/TKO victories occur through counter-striking or singular decisive moments rather than prolonged offensive pressure, which may explain why the aggression score is not disproportionately high. This finding aligns with the evolving metagame of striking in MMA, where **efficient striking and patience** often triumph over reckless forward pressure.
+
+Submission victories (SUB) and split decision wins (S-DEC) show **similar aggression scores, slightly lower than M-DEC**, indicating that fights leading to submission finishes often involve active positional grappling, offensive setups, and sustained engagement. Unlike knockouts, which may result from a single moment of precision, submissions often require controlled aggression, chain attacks, and methodical positional advancement. The comparable aggression levels between SUB and S-DEC also highlight that **closely contested fights requiring judges' intervention tend to involve fighters exhibiting controlled offensive maneuvers rather than outright dominance**, leading to more contested scorecards and narrower margins of victory.
+
+Finally, unanimous decision victories with lower dominance margins (U-DEC) reflect the **lowest aggression scores**, suggesting that these fights are often more tactical, with fighters favoring a balanced approach that minimizes risk rather than maximizing offensive output. This reinforces the notion that winning a decision does not necessarily require sustained high aggression but can be achieved through **strategic movement, effective counter-striking, and defensive control**. These findings illustrate that aggression is not a one-size-fits-all metric for success in MMA but rather a nuanced factor that manifests differently across various finishing methods, with controlled, sustained aggression often leading to more definitive victories while explosive, opportunistic strategies contribute to high-impact finishes.
+```{r}
+# Density Plot: Fight Pace across Finishing Methods
+density_plot <- ggplot(ufc_filtered, aes(x = FightPace, fill = Finish)) +
+  geom_density(alpha = 0.6) +
+  labs(title = "Fight Pace Distribution by Finishing Method",
+       x = "Fight Pace",
+       y = "Density") +
+  theme_minimal()
+
+# Convert to interactive plot
+interactive_density_plot <- ggplotly(density_plot)
+
+# Display interactive plot
+interactive_density_plot
+```
+The **Fight Pace Distribution by Finishing Method** density plot provides a crucial perspective on how the tempo of a fight influences its outcome. The sharp peak at a low **fight pace** (approximately 0.1) across multiple finishing methods, particularly in **unanimous decision (U-DEC) and split decision (S-DEC) outcomes**, suggests that many fights are characterized by **low-paced engagements**, likely dominated by strategic positioning, controlled striking exchanges, and minimal high-intensity bursts. This finding aligns with previous observations in combat sports analytics, where fights that go to decision tend to involve **measured approaches with moderate engagement rates** rather than reckless offensive pressure. The density peaks for decision outcomes imply that slower-paced fights are significantly more likely to extend the full duration, reinforcing the notion that **judges favor sustained but controlled output over momentary aggression**.
+
+Interestingly, **submission (SUB) finishes exhibit a more evenly distributed fight pace**, with a visible spread into the **higher fight pace range (0.2 - 0.4)**. This suggests that submission victories often emerge in fights with fluctuating tempos, where grappling exchanges and aggressive submission attempts are interwoven with slower control periods. Unlike knockouts, which typically result from singular high-impact moments, submissions often require a **dynamic sequence of positional transitions, defensive reactions, and chaining submission attempts**, explaining the broader distribution of fight pace for submission outcomes. The presence of a secondary peak at a higher fight pace for submission victories further emphasizes the **importance of aggressive grappling exchanges and scrambles** in creating submission opportunities.
+
+Knockout (KO/TKO) outcomes, represented in the **red density distribution**, appear to occur more frequently in **moderate to high fight pace** scenarios. This is intuitive, as knockouts often result from **sustained offensive pressure, high-volume striking exchanges, or decisive counterattacks**. The higher density in this region suggests that KO/TKO victories are **disproportionately influenced by offensive engagement rates**, where a fighter maintains an active tempo, increases damage accumulation, and ultimately secures a knockout through consistent striking dominance. This differentiation in fight pace dynamics across finishing methods underscores the **strategic variations fighters employ depending on their strengths**, with high-paced striking leading to knockouts, fluctuating grappling sequences resulting in submissions, and controlled, slower engagements increasing the likelihood of a decision outcome.
+
+In combat sports analytics, summarizing key performance metrics by finishing type is crucial to understanding the underlying patterns that define fight outcomes. The ability to quantify aspects such as aggression, pace, striking versus grappling efficiency, and survivability provides a more comprehensive framework for assessing fighter tendencies and strategies. By aggregating these variables across different finishing methods, we can derive insights into how specific tactical elements contribute to knockouts, submissions, or decision-based results. This structured approach allows us to compare statistical profiles of fights that end early versus those that extend to judges' decisions, offering a deeper exploration of fight dynamics.
+
+To achieve this, a summary table of fight metrics categorized by finish type is generated, encapsulating average values for aggression, fight pace, strike-to-grapple ratio, and survivability. These variables collectively serve as key descriptors of fight tempo, offensive intensity, and endurance. The differentiation of finishing methods through these statistical attributes enables us to pinpoint whether particular fight characteristics align with specific outcomes. By leveraging aggregated statistics, we bridge the gap between qualitative fight analysis and quantitative modeling, setting the foundation for more robust predictive frameworks in mixed martial arts (MMA) analytics.
+
+```{r}
+# Advanced Summary Table: Exploring Different Fight Metrics by Finish Type
+advanced_summary_table <- ufc_filtered %>%
+  group_by(Finish) %>%
+  summarise(
+    Avg_Aggression = mean(AggressionScore, na.rm = TRUE),
+    Avg_Fight_Pace = mean(FightPace, na.rm = TRUE),
+    Avg_StrikeGrapple = mean((RedStrikeGrapple + BlueStrikeGrapple) / 2, na.rm = TRUE),
+    Avg_Survivability = mean(SurvivabilityIndex, na.rm = TRUE)
+  )
+
+# Display the updated table
+print(advanced_summary_table)
+
+```
+The table reveals key distinctions in aggression levels across finishing types. Majority Decision (M-DEC) fights exhibit the highest average aggression (0.6453), followed by Split Decisions (0.4017) and Submissions (0.3801). This suggests that decision-based fights, particularly contested ones, require sustained offensive output to secure victory, as opposed to knockouts or submissions that may result from singular high-impact moments. Knockouts (KO/TKO) and Unanimous Decisions (U-DEC) display the lowest aggression levels, reinforcing the idea that striking stoppages often emerge from efficiency rather than sheer output volume. These results emphasize the role of prolonged engagement in decision fights compared to high-precision attacks leading to knockouts.
+
+Examining fight pace, we observe a clear trend: fights ending in KO/TKO (0.2974) and Submission (0.2843) exhibit significantly higher tempo than decision fights, particularly M-DEC (0.0667) and S-DEC (0.0782). This confirms that stoppages are typically driven by rapid offensive sequences, while slower-paced bouts are more likely to extend to judges' scorecards. The survivability metric aligns with these findings, as decision fights (M-DEC, S-DEC, U-DEC) exhibit values close to 1, indicating that these fights invariably last the full duration. Conversely, KO/TKO and Submission finishes correspond to lower survivability scores (0.6772 and 0.7397, respectively), indicating their tendency to end earlier. These findings reinforce the idea that fight pacing plays a fundamental role in determining how a contest concludes.
+
+Lastly, the strike-to-grapple efficiency metric highlights that submission fights (0.4272) involve the highest emphasis on grappling exchanges, followed by split decisions (0.3907) and unanimous decisions (0.3882). This suggests that fighters engaging in sustained grappling sequences are more likely to either secure submissions or extend fights to close decision outcomes. Knockout finishes, on the other hand, demonstrate lower strike-to-grapple values (0.3141), emphasizing the reliance on striking proficiency rather than prolonged clinch work or ground control. Overall, the structured summary of these fight metrics provides a detailed breakdown of how different styles and approaches manifest across UFC finishing types.
+
+Title fights represent the pinnacle of competition, showcasing the most elite athletes in their respective divisions. Unlike regular fights, title bouts are characterized by heightened stakes, extended round durations, and often more strategic, methodical pacing. Analyzing how finishing methods differ between title fights and regular fights provides insight into the tactical shifts that occur when a championship belt is on the line. Fighters in title fights may adopt more conservative approaches to mitigate risk, while contenders in regular fights might engage in more aggressive exchanges in pursuit of highlight-reel finishes. Understanding these differences is key to decoding fight dynamics at the highest level.
+
+To explore this, the distribution of finishing methods is visualized, comparing regular fights to title fights based on key stoppage types, including knockouts (KO/TKO), submissions, and decisions. By examining this breakdown, we assess how fight-ending trends shift under championship conditions. The proportion of each finishing method highlights the balance between aggression, endurance, and technical superiority required to succeed in different contexts. This analysis serves as a bridge between performance analytics and competitive fight strategy.
+```{r}
+ufc_data <- read.csv("full_ufc_data.csv")
+
+# Select relevant columns, including title bout indicator
+ufc_filtered <- ufc_data %>%
+  select(TitleBout, Finish, RedStrikeGrapple, BlueStrikeGrapple) %>%
+  filter(!is.na(Finish)) %>%  # Remove NA values
+  mutate(
+    TitleBout = ifelse(TitleBout == 1, "Title Fight", "Regular Fight"),
+    Finish = as.factor(Finish)
+  )
+
+# --- Stacked Bar Chart: Finishing Method Breakdown for Title vs Non-Title Fights ---
+title_fight_breakdown <- ufc_filtered %>%
+  group_by(TitleBout, Finish) %>%
+  summarise(Fight_Count = n(), .groups = "drop") %>%
+  mutate(Percentage = Fight_Count / sum(Fight_Count) * 100)
+
+# Create ggplot stacked bar chart
+stacked_bar_plot <- ggplot(title_fight_breakdown, aes(x = TitleBout, y = Percentage, fill = Finish)) +
+  geom_bar(stat = "identity", position = "fill") +
+  labs(title = "Finishing Method Breakdown: Title Fights vs. Regular Fights",
+       x = "Fight Type",
+       y = "Percentage of Fights",
+       fill = "Finish Method") +
+  theme_minimal()
+
+# Convert to interactive plot
+interactive_stacked_bar <- ggplotly(stacked_bar_plot)
+
+# Display the interactive plot
+interactive_stacked_bar
+
+```
+The stacked bar chart illustrates the relative distribution of finishing methods in regular fights versus title fights, revealing key disparities. Unanimous decisions (U-DEC) account for a significant proportion of title fights, aligning with the expectation that championship fights often extend the full duration. This suggests that elite competitors in five-round bouts prioritize endurance and strategic point-fighting over high-risk exchanges, aiming for calculated, methodical victories rather than early stoppages. In contrast, regular fights show a slightly higher frequency of KO/TKO finishes, indicating that three-round bouts incentivize fighters to push for decisive finishes due to the shorter time frame.
+
+Interestingly, submission rates appear relatively stable between both fight types, implying that grappling-heavy fighters maintain a consistent ability to secure submissions regardless of the fight’s significance. This consistency suggests that submission specialists rely on technique and control rather than fight duration or context to execute their strategies successfully. Meanwhile, majority and split decisions (M-DEC, S-DEC) are slightly more frequent in title fights, reinforcing the notion that high-stakes bouts tend to be closely contested, requiring judges to determine outcomes more frequently than in standard fights.
+
+The KO/TKO rate in title fights remains substantial but slightly reduced compared to regular fights, likely reflecting a more measured striking approach in championship contests. This aligns with the idea that championship-caliber fighters exhibit greater durability, defensive awareness, and tactical patience, leading to fewer abrupt finishes. Regular fights, on the other hand, display a greater proportion of knockout finishes, suggesting that mid-tier competitors may be more vulnerable to high-impact striking exchanges or that they take greater risks in pursuit of standout performances.
+
+Finally, disqualification (DQ) finishes, while minimal, highlight rare occurrences where rule infractions influence results. While their impact is marginal, their presence underscores the heightened scrutiny in title fights, where championship implications make adherence to regulations more critical. Overall, this comparative analysis of finishing methods between regular and title fights underscores the influence of fight structure, experience, and risk tolerance in shaping competitive dynamics in the UFC.
+
+**How Does Weight Class Affect Fight Duration?**
+Weight class is one of the most influential factors in determining the pacing, strategy, and overall duration of fights in mixed martial arts (MMA). The structure of weight divisions is designed to create competitive parity by matching fighters of similar size, but it also introduces distinct physiological and tactical differences that affect how fights unfold. Lighter fighters tend to rely more on speed, endurance, and technical exchanges, leading to longer bouts, while heavier fighters often possess knockout power that can end fights in the early rounds. By systematically analyzing how weight class correlates with fight duration, we can uncover key patterns that explain why some divisions see frequent decisions while others feature a high rate of early stoppages.
+
+The relationship between weight class and fight duration is rooted in both biomechanics and combat strategy. Fighters in lower weight divisions typically demonstrate higher output in terms of volume striking and movement, often leading to sustained engagements that reach later rounds. In contrast, fighters in heavier weight classes generate significantly more force per strike, increasing the probability of knockouts and leading to shorter fights on average. Additionally, grappling efficiency, cardiovascular conditioning, and defensive durability all play roles in dictating how long a fight lasts. Exploring these relationships allows us to quantify the effects of weight class on fight longevity and assess whether common perceptions about divisional trends hold up under empirical analysis.
+
+Beyond theoretical implications, understanding how weight class affects fight duration has practical applications for athletes, coaches, and matchmakers in the UFC. Fighters can tailor their training regimens to optimize endurance or power-based strategies, depending on the tendencies within their respective divisions. Similarly, matchmakers and analysts can use historical fight data to predict expected bout lengths and structure fight cards accordingly, ensuring balanced pacing across an event. By leveraging a data-driven approach, we can not only validate conventional wisdom but also provide new insights into the dynamics of MMA competition, enhancing strategic decision-making at multiple levels within the sport.
+
+```{r}
+# Load libraries
+library(ggplot2)
+library(ggridges)
+library(dplyr)
+library(plotly)
+
+ufc_data <- read.csv("full_ufc_data.csv")
+
+# Select relevant columns
+ufc_filtered <- ufc_data %>%
+  select(WeightClass, TotalFightTimeSecs) %>%
+  filter(!is.na(WeightClass), !is.na(TotalFightTimeSecs))
+
+# Order weight classes for better visualization
+weight_order <- c("Flyweight", "Bantamweight", "Featherweight", "Lightweight",
+                  "Welterweight", "Middleweight", "Light Heavyweight", "Heavyweight")
+
+ufc_filtered$WeightClass <- factor(ufc_filtered$WeightClass, levels = weight_order)
+
+```
+
+
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(ggridges)
+library(dplyr)
+
+# Define the correct order of UFC weight divisions
+ufc_division_order <- c("Women's Strawweight", "Women's Flyweight", "Women's Bantamweight", 
+                        "Women's Featherweight", "Flyweight", "Bantamweight", "Featherweight", 
+                        "Lightweight", "Welterweight", "Middleweight", 
+                        "Light Heavyweight", "Heavyweight")
+
+# Filter data: Remove NA values and exclude "Catch Weight"
+ufc_filtered <- ufc_data %>%
+  filter(!is.na(WeightClass) & !is.na(TotalFightTimeSecs) & WeightClass != "Catch Weight") %>%
+  mutate(WeightClass = factor(WeightClass, levels = rev(ufc_division_order)))  # Ensure proper order
+
+# Ridgeline plot for fight duration distribution by weight class
+ridge_plot <- ggplot(ufc_filtered, aes(x = TotalFightTimeSecs, y = WeightClass, fill = WeightClass)) +
+  geom_density_ridges(alpha = 0.7, scale = 1.2) +
+  labs(title = "Fight Duration Distribution by Weight Class",
+       x = "Fight Duration (Seconds)",
+       y = "Weight Class") +
+  theme_minimal() +
+  theme(legend.position = "none") # Remove legend for clarity
+
+print(ridge_plot)
+
+
+```
+The visualization above presents a density distribution of fight durations across various UFC weight classes, offering a nuanced understanding of how weight influences the length of a bout. The density ridgeline plot effectively highlights where most fights within each division tend to cluster in terms of duration while also capturing the variance within each category. By analyzing this distribution, we can quantify how weight class impacts the probability of early stoppages versus prolonged fights, revealing strategic and physiological differences across divisions.
+
+The distribution of fight duration across different men's UFC weight classes reveals significant trends regarding how fighter size and physicality influence the length of a bout. The density ridgeline plot illustrates that heavier divisions, such as Heavyweight and Light Heavyweight, tend to have shorter fights, with a noticeable concentration of fights ending within the first few hundred seconds. This outcome aligns with the well-established notion that fighters in these divisions possess greater knockout power, making early stoppages more frequent. The ability to generate significant force in each strike often results in quick finishes, whether through knockouts or referee stoppages due to strikes.
+
+In contrast, lighter men's divisions, such as Flyweight, Bantamweight, and Featherweight, display a more even distribution of fight duration, with a considerable portion of bouts extending into later rounds. This trend suggests that fighters in these divisions rely more on technical striking, endurance, and grappling exchanges rather than single-strike power. Their fights often go the distance due to the lower probability of knockouts, leading to a greater emphasis on point-based fighting strategies and tactical control. The peaks in these distributions further confirm that fights in the lower weight classes are more likely to end by decision, as opposed to the quick finishes seen in heavier categories.
+
+The middleweight divisions, including Lightweight, Welterweight, and Middleweight, exhibit a balance between these two extremes. Their fight duration distributions do not skew as heavily towards early stoppages as the Heavyweight division, nor do they exhibit the prolonged consistency of the lighter weight classes. This observation supports the idea that these weight classes represent a transition in fighter dynamics, where knockout power is still a factor, but endurance and sustained striking volume play a crucial role. This is particularly evident in the Lightweight division, which maintains a relatively balanced fight duration distribution, signifying a mix of striking finishes and decisions.
+
+Another key observation from the data is that although weight class strongly influences fight duration, there is still considerable variability within each category. Some Heavyweight fights extend beyond 1000 seconds, indicating matchups where defensive strategies, grappling exchanges, or cautious pacing play a role. Similarly, some Flyweight and Bantamweight fights end early, showcasing that finishing ability is not solely determined by weight but also by individual fighter styles and matchup dynamics. This level of granularity in fight duration analysis helps refine our understanding of how weight class interacts with fighting style and strategy, offering deeper insights for analysts, coaches, and matchmakers in the UFC.
+
+Analyzing the distribution of KO/TKO finishes across weight classes is essential to understanding how power, endurance, and striking ability impact fight outcomes. The frequency of KO/TKO finishes varies significantly across different divisions, reflecting the influence of physiological and biomechanical factors. Striking power, chin durability, and fight strategy all contribute to whether a fight ends in a knockout or extends to a decision or submission. This analysis allows us to quantify the differences between weight classes and determine whether heavier fighters are inherently more likely to win via knockout compared to their lighter counterparts.
+
+Understanding this pattern is particularly useful for fighter strategy, matchmaking, and even sports betting models. If KO/TKO rates are consistently higher in specific divisions, it may indicate that these weight classes favor a striking-heavy style of fighting. Conversely, divisions with lower KO/TKO percentages may suggest a greater reliance on grappling, submissions, or defensive techniques. Identifying these trends not only enhances our understanding of UFC fight dynamics but also provides valuable insights into how fight strategies should be adapted based on the weight class.
+
+
+
+```{r}
+
+# Filter out Catch Weight and NA values
+ufc_filtered <- ufc_data %>%
+  filter(!is.na(WeightClass) & WeightClass != "Catch Weight") %>%
+  mutate(WeightClass = factor(WeightClass, levels = rev(ufc_division_order)))
+
+# Calculate percentage of KO, Submission, and Decision wins per weight class
+ko_sub_dec_rates <- ufc_filtered %>%
+  group_by(WeightClass, Finish) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(WeightClass) %>%
+  mutate(Percentage = Count / sum(Count) * 100) %>%
+  filter(Finish %in% c("KO/TKO", "Submission", "Decision"))  # Keep relevant finish types
+
+# Create dot plot
+dot_plot <- ggplot(ko_sub_dec_rates, aes(x = Percentage, y = WeightClass, color = Finish)) +
+  geom_point(size = 4, alpha = 0.8) +
+  labs(title = "KO, Submission, and Decision % by Weight Class",
+       x = "Percentage (%)",
+       y = "Weight Class",
+       color = "Finish Type") +
+  theme_minimal()
+
+print(dot_plot)
+
+```
+The results indicate a strong inverse relationship between weight class and the percentage of fights ending in a KO/TKO. The heavier the weight class, the higher the probability that a fight will end in a knockout. Heavyweight fighters exhibit the highest proportion of KO/TKO finishes, with nearly 50% of fights ending via knockout. This aligns with expectations, as heavier fighters possess significantly greater punching power, and the increased force of impact makes knockouts more likely. Additionally, due to their larger frames, heavyweight fighters tend to absorb more damage before succumbing to strikes.
+
+In contrast, lighter weight classes such as Flyweight and Bantamweight display a much lower percentage of KO/TKO finishes, with percentages dropping closer to 20%. Fighters in these divisions tend to have lower knockout power but compensate with higher fight volume, speed, and endurance. The lower KO/TKO rate suggests that these weight classes emphasize prolonged exchanges, strategic maneuvering, and a greater reliance on judges' decisions to determine the winner. The presence of more decision finishes in these classes also implies a stronger emphasis on technical skill rather than pure power.
+
+The downward trend observed across the weight classes reinforces the idea that power plays a dominant role in heavier divisions, while speed and technicality are more critical in lighter categories. This finding supports the notion that different divisions require distinct training approaches and tactical adaptations. Understanding these patterns helps fighters refine their game plans, coaches tailor training regimens, and analysts predict fight outcomes with greater accuracy based on a fighter's weight class and historical data.
+
+The ability to absorb strikes before succumbing to a finish is a critical measure of a fighter’s durability and defensive capability. This metric is particularly insightful when analyzed across weight classes, as it reflects how different divisions manage incoming damage before a knockout or submission occurs. By examining the average number of strikes absorbed before a fight-ending sequence, we gain valuable insights into how weight influences damage tolerance and the frequency of high-impact exchanges.
+
+Lighter weight classes tend to emphasize speed, agility, and volume striking, whereas heavier divisions rely more on power and single-strike effectiveness. Fighters in heavier divisions are known to have higher knockout power but also possess greater susceptibility to absorbing fewer but more damaging strikes. This analysis helps contextualize how weight class influences fight outcomes and whether durability or power plays a more significant role in determining when a fighter reaches their threshold before being finished.
+```{r}
+# Filter dataset: Remove NAs & Catch Weight
+ufc_filtered <- ufc_data %>%
+  filter(!is.na(WeightClass) & WeightClass != "Catch Weight" & 
+         !is.na(BlueAvgSigStrLanded) & !is.na(RedAvgSigStrLanded))
+
+# Define correct weight class order
+ufc_filtered$WeightClass <- factor(ufc_filtered$WeightClass, 
+                                   levels = c("Flyweight", "Bantamweight", "Featherweight", 
+                                              "Lightweight", "Welterweight", "Middleweight", 
+                                              "Light Heavyweight", "Heavyweight"))
+
+# Calculate avg. strikes absorbed before finish per weight class
+strikes_absorbed <- ufc_filtered %>%
+  group_by(WeightClass) %>%
+  summarise(Avg_StrikesAbsorbed = mean((BlueAvgSigStrLanded + RedAvgSigStrLanded) / 2, na.rm = TRUE)) %>%
+  filter(!is.na(WeightClass)) %>%
+  arrange(desc(Avg_StrikesAbsorbed))
+
+# Create Lollipop Chart
+lollipop_chart <- ggplot(strikes_absorbed, aes(x = Avg_StrikesAbsorbed, y = WeightClass)) +
+  geom_segment(aes(x = 0, xend = Avg_StrikesAbsorbed, yend = WeightClass), color = "grey") +
+  geom_point(size = 5, color = "darkblue") +
+  labs(title = "Strikes Absorbed Before Finish by Weight Class",
+       x = "Average Strikes Absorbed",
+       y = "Weight Class") +
+  theme_minimal()
+
+print(lollipop_chart)
+
+
+```
+The results show a clear trend: heavier weight classes, particularly Heavyweight and Light Heavyweight, absorb a higher number of strikes before a finish occurs. This suggests that while these fighters possess immense power, they also have the durability to withstand a greater number of significant strikes before being knocked out or submitted. This aligns with the nature of heavyweight fights, where knockouts are common, but fighters can endure multiple heavy blows before succumbing to a finish.
+
+In contrast, the lighter divisions, such as Flyweight and Bantamweight, demonstrate a lower number of absorbed strikes before a finish occurs. This indicates that fights in these divisions are more likely to end due to accumulated damage over time or quick, decisive maneuvers such as submissions. Since fighters in these weight classes rely on speed and volume rather than sheer power, knockouts typically occur after sustained offensive sequences rather than single-punch finishes. This trend underscores how weight class dictates not only striking power but also the way fights unfold tactically, influencing both fight strategies and durability expectations across divisions.
+
+Identifying the key determinants of durability and the ability to absorb strikes before a fight-ending sequence is crucial for understanding fighter resilience. A linear model allows us to quantitatively evaluate the impact of multiple explanatory variables—such as weight class, fight pace, and survivability—on the number of strikes absorbed before a finish occurs. This statistical approach provides insight into the relationships between these factors, enabling us to determine whether durability is primarily a function of weight class or if other strategic elements, such as defensive ability or conditioning, play a significant role. By applying a multiple linear regression model, we can assess the predictive power of different fight characteristics, guiding data-driven conclusions on what influences a fighter’s ability to withstand damage.
+```{r}
+# Define correct UFC division order
+ufc_division_order <- c("Flyweight", "Bantamweight", "Featherweight",
+                        "Lightweight", "Welterweight", "Middleweight",
+                        "Light Heavyweight", "Heavyweight")
+
+# Filter dataset: Remove NAs & Catch Weight
+ufc_filtered <- ufc_data %>%
+  filter(!is.na(WeightClass) & WeightClass != "Catch Weight" & 
+         !is.na(BlueAvgSigStrLanded) & !is.na(RedAvgSigStrLanded))
+
+# Convert weight class into numerical ranking for regression
+ufc_filtered <- ufc_filtered %>%
+  mutate(WeightRank = as.numeric(factor(WeightClass, levels = rev(ufc_division_order))))
+
+# Calculate Strikes Absorbed (Average between Red and Blue fighters)
+ufc_filtered <- ufc_filtered %>%
+  mutate(Avg_StrikesAbsorbed = (BlueAvgSigStrLanded + RedAvgSigStrLanded) / 2)
+
+durability_lm2 <- lm(Avg_StrikesAbsorbed ~ WeightRank + FightPace + SurvivabilityIndex, data = ufc_filtered)
+summary(durability_lm2)
+
+```
+The regression analysis provides several key insights into the relationship between weight class, fight characteristics, and durability. The WeightRank variable, which represents a fighter’s position in the weight class hierarchy, emerges as a statistically significant predictor (p-value = 0.000212) of the number of strikes absorbed before a finish. With a positive coefficient of 0.8479, this suggests that fighters in heavier weight classes tend to absorb more strikes before being finished. This aligns with our earlier visual analysis, reinforcing the idea that heavier fighters can endure more damage before succumbing to a knockout or submission. The physical attributes of fighters in heavier divisions—such as greater muscle mass and bone density—likely contribute to this increased durability.
+
+In contrast, the FightPace variable does not exhibit statistical significance (p-value = 0.8718), indicating that the speed at which a fight progresses has minimal impact on the number of strikes a fighter can absorb before being finished. This suggests that, while fight pace may influence strategic outcomes such as decision victories or overall fight duration, it does not directly affect a fighter’s ability to endure damage. Similarly, SurvivabilityIndex, which measures a fighter’s likelihood of lasting past the second round, is also not a significant predictor (p-value = 0.5537). While this metric might correlate with fight longevity in general, it does not necessarily translate to absorbing more strikes before a finish.
+
+The model's R-squared value (0.0119) indicates that only about 1.2% of the variability in the number of strikes absorbed before a finish can be explained by the selected predictors. This suggests that other unmeasured factors—such as striking defense, chin durability, or the opponent’s striking power—are likely stronger determinants of how many strikes a fighter can withstand before a fight-ending sequence. Although the F-statistic (5.273) and its associated p-value (0.001288) suggest that the overall model is statistically significant, the low explanatory power highlights the need for additional variables to improve predictive accuracy.
+
+Overall, while the model confirms the strong influence of weight class on strike absorption, it also underscores the limitations of using only a few fight characteristics to predict durability. Future models could incorporate more granular data, such as defensive statistics, knockdown resistance, or even biomechanical measurements, to improve the accuracy of predicting a fighter’s ability to absorb strikes before a finish occurs.
+
+**The Accuracy of Betting Markets**
+
+In the realm of professional combat sports, betting markets play a significant role in shaping perceptions of fighter abilities and expected outcomes. The Ultimate Fighting Championship (UFC), as the premier mixed martial arts (MMA) organization, presents an intriguing case for studying the effectiveness of betting odds in accurately predicting fight winners. The question of whether underdogs are systematically underestimated by oddsmakers is not merely a matter of gambling efficiency but also provides insight into biases, market inefficiencies, and potential areas of mispricing. By analyzing historical fight outcomes in relation to betting odds, we can uncover whether the market consistently undervalues underdogs or if favorites tend to dominate as expected.
+
+The fundamental hypothesis in this analysis is that if betting markets were perfectly efficient, favorites would win at a frequency proportional to their implied probability, and underdogs would win at a rate that reflects their respective odds. However, deviations from this expectation could suggest systematic biases in how oddsmakers and bettors evaluate fighters. Several factors, including fighter popularity, recency bias, and stylistic matchups, could distort betting odds, leading to either overestimation of favorites or undervaluation of underdogs. By segmenting fight results by weight class and comparing win percentages for favorites and underdogs, we aim to assess whether underdog wins occur more frequently than their betting odds imply.
+
+A thorough statistical examination of these trends not only benefits sports analysts and gamblers but also contributes to a broader understanding of market efficiency in sports betting. If underdogs consistently outperform their implied win probabilities, this could indicate exploitable inefficiencies, allowing sharp bettors to identify value opportunities. Conversely, if favorites dominate at a rate that aligns closely with betting market expectations, it would reinforce the notion that oddsmakers efficiently integrate all available information when setting odds. Our analysis seeks to shed light on these questions by examining the historical distribution of underdog wins across different weight classes.
+
+```{r}
+# Filter dataset & remove NAs in betting odds + remove Catch Weight
+ufc_filtered <- ufc_data %>%
+  filter(!is.na(RedOdds) & !is.na(BlueOdds) & WeightClass != "Catch Weight") %>%
+  mutate(Favorite_Winner = case_when(
+    (RedOdds < BlueOdds & Winner == "Red") ~ "Favorite Won",
+    (BlueOdds < RedOdds & Winner == "Blue") ~ "Favorite Won",
+    TRUE ~ "Underdog Won"
+  ))
+
+# Compute win rates per weight class
+betting_win_rates <- ufc_filtered %>%
+  group_by(WeightClass, Favorite_Winner) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  mutate(Win_Percentage = Count / sum(Count) * 100)
+
+# Display the updated table
+betting_win_rates
+```
+The provided table outlines fight outcomes across various UFC weight classes, distinguishing between fights won by favorites and those won by underdogs. One of the most striking observations is the significant disparity in win rates between the two groups. As expected, favorites win a majority of the time across all weight classes, which aligns with the notion that betting markets do a reasonable job of identifying the superior fighter. However, the frequency of underdog victories, while lower, is not negligible, suggesting that upsets occur regularly in MMA.
+
+Breaking down the results by weight class, we notice that lighter divisions such as Flyweight and Bantamweight exhibit a relatively high rate of underdog victories compared to heavier divisions. This may be attributed to the inherent competitiveness of these weight classes, where technical skills and cardio often play a larger role than sheer knockout power. In contrast, heavier divisions like Heavyweight and Light Heavyweight see favorites winning at a higher percentage, likely due to the increased likelihood of decisive finishes (i.e., knockouts), which favor the more dominant fighter. This trend supports the notion that weight class dynamics significantly impact fight predictability.
+
+Another noteworthy trend is the presence of certain weight classes where the underdog win percentage appears disproportionately high. For instance, in some categories, underdogs win over 30% of the time, which is a non-trivial rate. This suggests that betting markets may struggle to accurately price fights in specific divisions, potentially due to the unpredictability of styles, fighter evolution, or matchup intricacies. The disparity in win percentages between weight classes further emphasizes that while betting odds serve as a strong predictor of fight outcomes, they are not infallible and occasionally misrepresent the true likelihood of an underdog victory.
+
+Finally, while the data supports the expected dominance of favorites, the existence of consistent underdog victories raises important questions about betting market efficiency. If underdog wins are occurring more frequently than their odds suggest, this would indicate a systematic mispricing that could be exploited by informed bettors. Future analyses could further refine this study by incorporating odds-implied probabilities and examining whether the rate of underdog wins deviates significantly from expected values. Understanding these nuances will provide deeper insights into how well betting markets price uncertainty in MMA fights.
+
+In sports analytics, one of the most compelling questions revolves around the predictability of outcomes and whether certain biases exist in the way markets perceive competition. In mixed martial arts (MMA), betting markets heavily influence public perception, and the odds assigned to fighters reflect both statistical models and bettor sentiment. However, the frequency with which underdogs emerge victorious raises critical questions about whether favorites are truly dominant or if there exist inefficiencies in how odds are determined. By segmenting win rates by weight class, we can systematically examine whether specific divisions are more prone to upsets, which could indicate structural differences in fighter competitiveness and market mispricing.
+
+Our decision to analyze the win rate of favorites versus underdogs across weight classes stems from the inherent variation in fighting styles, power dynamics, and skill sets present in different divisions. For example, heavier weight classes tend to favor knockout power, potentially leading to more decisive fights, while lighter weight classes emphasize endurance, technique, and decision-based victories. These factors could influence the extent to which favorites win at a higher rate or whether underdogs possess a greater probability of upsetting expectations. Understanding these patterns is not only useful for bettors and analysts but also provides deeper insight into the competitive balance within the UFC.
+```{r}
+# Create small multiple bar charts
+betting_plot <- ggplot(betting_win_rates, aes(x = Favorite_Winner, y = Win_Percentage, fill = Favorite_Winner)) +
+  geom_col() +
+  facet_wrap(~ WeightClass, scales = "free") + # Create separate graphs for each weight class
+  labs(title = "Win Rate of Favorites vs. Underdogs Across Weight Classes",
+       x = "Outcome",
+       y = "Win Percentage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Print the graph
+print(betting_plot)
+```
+The visualization clearly illustrates a consistent pattern across all weight classes: favorites win a significantly higher proportion of fights compared to underdogs. This aligns with the expectation that betting odds effectively capture fight outcomes to some extent. However, the difference in win rates is not uniform across divisions. In some weight classes, such as Middleweight and Light Heavyweight, underdogs appear to have a slightly higher win percentage compared to other divisions. This suggests that certain divisions may be more unpredictable, either due to stylistic differences, higher finishing rates, or a greater variance in fighter abilities.
+
+One interesting observation is the relative parity in some of the lighter divisions, where underdogs win at a rate that, while still lower than favorites, is more competitive. This trend may be attributed to the increased technical depth and cardio advantages present in lower weight classes, which can reduce the disparity between fighters. In contrast, heavier divisions such as Heavyweight and Light Heavyweight show a larger gap between favorite and underdog win rates, likely due to the increased knockout potential in these weight classes. This reinforces the notion that power disparities play a significant role in fight predictability.
+
+Furthermore, while favorites maintain a dominant win rate across all categories, the non-negligible success rate of underdogs highlights the inherent uncertainty in MMA competition. Unlike team sports, where structural advantages play a more significant role, MMA fights are subject to rapid momentum shifts, fighter-specific strategies, and unpredictable moments that can lead to upsets. The presence of underdog victories suggests that while betting markets generally set accurate odds, there remains an element of unpredictability that cannot be fully captured through traditional forecasting methods. Future analyses could further explore whether certain fight metrics, such as striking efficiency or grappling control, correlate with underdog success rates.
+
+One of the fundamental aspects of mixed martial arts (MMA) betting and analysis is understanding the manner in which fighters secure victories. While favorites are expected to dominate fights across different scenarios, underdogs often defy expectations, raising the question of whether their victories tend to come through finishes (knockouts or submissions) or decisions. The ability of an underdog to finish a fight versus winning through the judges' scorecards may indicate whether their success is primarily due to unexpected dominant performances or the accumulation of small advantages over the fight’s duration. This analysis provides insight into whether underdog wins are more often decisive moments of success or extended battles of attrition.
+```{r}
+# Filter dataset & categorize finishes vs. decision wins
+ufc_filtered <- ufc_data %>%
+  filter(!is.na(Finish) & !is.na(BettingEdgeIndex)) %>%
+  mutate(Finish_Type = case_when(
+    Finish %in% c("KO/TKO", "SUB") ~ "Finish",
+    Finish %in% c("U-DEC", "M-DEC", "S-DEC") ~ "Decision",
+    TRUE ~ NA_character_
+  )) %>%
+  filter(!is.na(Finish_Type))  # Remove NA values
+
+# Compute percentages of finishes vs. decisions for underdogs
+underdog_finish_rates <- ufc_filtered %>%
+  mutate(Fighter_Type = ifelse(BettingEdgeIndex < 0.5, "Underdog", "Favorite")) %>%
+  group_by(Fighter_Type, Finish_Type) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  mutate(Win_Percentage = Count / sum(Count) * 100)
+
+# Ensure Finish is on Top
+underdog_finish_rates$Finish_Type <- factor(underdog_finish_rates$Finish_Type, 
+                                            levels = c("Decision", "Finish"))
+
+# Create Stacked Bar Chart (with Updated Colors & Order)
+stacked_bar <- ggplot(underdog_finish_rates, aes(x = Finish_Type, y = Win_Percentage, fill = Fighter_Type)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = round(Win_Percentage, 1)), position = position_stack(vjust = 0.5), size = 5, color = "white") +
+  scale_fill_manual(values = c("Underdog" = "#FF5733", "Favorite" = "#3498DB")) +  # Custom Colors
+  labs(title = "Underdog Finishes vs. Decision Wins",
+       x = "Fight Outcome",
+       y = "Win Percentage",
+       fill = "Fighter Type") +
+  theme_minimal()
+
+# Print the updated plot
+print(stacked_bar)
+```
+The visualization highlights a striking pattern: underdogs secure a significant proportion of their victories via decision (41.5%) compared to finishes (37.4%). While this suggests that underdogs are still able to outperform expectations over the full duration of a fight, their ability to finish a fight is slightly lower. This may indicate that while upsets do occur, they are often achieved through consistent performance across multiple rounds rather than a single fight-ending moment. However, the presence of 37.4% of underdog victories coming via finishes indicates that a substantial portion of these upsets come from decisive stoppages, potentially through high-risk strategies or underestimated offensive capabilities.
+
+Interestingly, favorites maintain a higher proportion of wins through both methods, but their advantage is slightly more pronounced in decision outcomes (8.9%) compared to finishes (12.3%). This suggests that while underdogs are capable of pulling off both types of victories, they may struggle more in controlling fights strategically over multiple rounds, where favorites benefit from superior conditioning, fight IQ, and strategic game plans. The relatively high percentage of underdog finishes suggests that when they do win, it is often through sudden bursts of offensive effectiveness, catching their opponents off guard rather than systematically outscoring them over the full fight. These insights provide valuable implications for both betting markets and fighter strategy development, highlighting how different fight dynamics influence unexpected outcomes.
+```{r}
+# Filter dataset: Remove NAs in relevant variables
+ufc_filtered <- ufc_data %>%
+  filter(!is.na(BettingEdgeIndex) & !is.na(Finish) &
+         !is.na(AggressionScore) & !is.na(FightPace) &
+         !is.na(RedFinishingProb) & !is.na(BlueFinishingProb) &
+         !is.na(SurvivabilityIndex))
+
+# Convert Finish Outcome into Binary (1 = Finish, 0 = Decision)
+ufc_filtered <- ufc_filtered %>%
+  mutate(Finish_Binary = ifelse(Finish %in% c("KO/TKO", "SUB"), 1, 0))
+
+# Build Logistic Regression Model
+fight_outcome_logit <- glm(Finish_Binary ~ BettingEdgeIndex + AggressionScore + 
+                            FightPace + RedFinishingProb + BlueFinishingProb + 
+                            SurvivabilityIndex, 
+                            data = ufc_filtered, 
+                            family = "binomial")  # Binomial logistic regression
+
+# Display Model Summary
+summary(fight_outcome_logit)
+```
+The logistic regression model was developed to determine the key factors influencing whether a fight ends in a finish (KO/TKO or submission) or goes to a decision. The primary independent variables included Betting Edge Index, Aggression Score, Fight Pace, Red Finishing Probability, Blue Finishing Probability, and Survivability Index. The model’s coefficients provide insights into the direction and magnitude of each predictor’s effect on the likelihood of a fight ending in a finish. The significance of each variable was assessed through p-values, with a lower value indicating a stronger statistical relationship with the dependent variable.
+
+Among the most significant predictors, Fight Pace exhibited a strongly positive coefficient (32.49, p < 0.001), suggesting that a higher pace substantially increases the likelihood of a fight ending in a finish. This finding aligns with expectations, as fighters who engage in high-paced bouts tend to create more offensive opportunities, leading to either knockouts or submissions. Additionally, Red Finishing Probability (p = 0.0057) and Blue Finishing Probability (p = 0.0020) were also significant, reinforcing the idea that fighters with higher perceived finishing potential are indeed more likely to secure non-decision victories. Interestingly, the Survivability Index had a large negative coefficient (-376.06, p < 0.001), indicating that fighters with higher survivability are much less likely to be finished, further validating the model’s assumptions.
+
+On the other hand, Betting Edge Index (-0.3005, p = 0.7748) and Aggression Score (-0.0502, p = 0.9468) were not statistically significant, meaning that these variables did not provide a strong predictive signal for fight outcomes. This is particularly interesting because it suggests that betting markets and raw aggression alone may not be reliable indicators of whether a fight ends early. The model’s residual deviance (205.63 on 1613 degrees of freedom) and AIC (219.63) indicate a reasonable goodness of fit, but the warning message about fitted probabilities being close to 0 or 1 suggests potential data separation issues. This may require further regularization or alternative modeling approaches to improve robustness. Despite these limitations, the model provides strong empirical evidence that pace, finishing ability, and durability are the dominant factors in predicting UFC fight finishes.
+
+
+**Conclusion: Insights into UFC Fight Outcomes through Data Science**
+
+This thesis has systematically explored three key aspects of UFC fight outcomes: **the impact of different finishing methods, the influence of weight class on fight duration, and the role of underdogs in betting markets.** Through a combination of statistical analysis, engineered variables, and predictive modeling, we have demonstrated how data science can be used to uncover patterns in professional MMA. Each theme provided valuable insights, not only confirming intuitive trends but also challenging conventional wisdom with data-driven evidence.
+
+First, our analysis of **finishing methods** revealed that aggressive fighters with high finishing probability scores are more likely to win inside the distance, and that the type of finish varies by fight dynamics. Knockouts were more frequent among heavier fighters, while submissions remained a viable path to victory across multiple weight classes. Fight pace was a critical determinant, with faster-paced fights significantly increasing the probability of a finish. This demonstrates that, while finishing ability is often attributed to skill or power, the tempo of a fight is an equally important factor.
+
+Second, our exploration of **weight class and fight duration** confirmed that lower-weight fighters tend to have longer, more technical bouts, while heavier divisions produce shorter fights with a higher likelihood of knockouts. This aligns with physiological differences in endurance and striking power across weight classes. The regression analysis on fight durability highlighted that survivability—defined as a fighter’s ability to withstand damage—plays a pivotal role in extending fights. The insights gained from these findings emphasize the importance of weight-specific strategies in both fighter preparation and betting markets.
+
+Finally, our examination of **underdogs and betting markets** provided an in-depth look at whether underdogs are truly underestimated. While favorites won at a higher rate, underdogs secured a meaningful share of victories, particularly through finishes. Logistic regression modeling indicated that betting odds alone were not strong predictors of fight outcomes, suggesting inefficiencies in the betting market. This finding challenges the assumption that favorites are always the superior choice and underscores the importance of deeper analytical models in predicting fight results. Ultimately, this research highlights how **data science can enhance our understanding of combat sports, bridging the gap between raw athletic performance and statistical predictability.**
+
+
+
+
+
+
+
